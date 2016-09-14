@@ -48,7 +48,7 @@ class Resources{
                     if(!$url){
                         $pkgInfo = $this->maps->get($pkgName);
                         //cache pack info
-                        $url = $pkgFounds[$pkgName] = $pkg['url'];
+                        $url = $pkgFounds[$pkgName] = $pkgInfo['url'];
                         $this->urlCache[$url] = $pkgInfo;
                     }
                 }else{
@@ -123,8 +123,8 @@ class Resources{
         $allUrls['css'] = array_merge($allUrls['css'], $inJsCss);
 
         $comboOptions = Helper::get($this->options, 'combo');
-        $comboOnlyUnPackFile = Helper::get($comboOptions, 'comboOnlyUnPackFile', false);
-        $comboMaxUrlLength = Helper::get($comboOptions, 'comboMaxUrlLength', self::COMBO_MAX_URL_LENGTH);
+        $comboOnlyUnPackFile = Helper::get($comboOptions, 'onlyUnPackFile', false);
+        $comboMaxUrlLength = Helper::get($comboOptions, 'maxUrlLength', self::COMBO_MAX_URL_LENGTH);
 
         foreach($allUrls as $type => $urls){
             $urls = $allUrls[$type] = array_unique($urls);
