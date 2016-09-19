@@ -23,7 +23,7 @@ class Resources{
             $mapDirs[] = $dir . '/_map_';
         }
 
-        if($cacheDir = Helper::get($this->options, 'cacheDir')){
+        if(($cacheDir = Helper::get($this->options, 'cacheDir')) && Helper::get($this->options, 'cache')){
             $this->cache = new Cache($cacheDir);
         }
 
@@ -48,7 +48,7 @@ class Resources{
                     if(!$url){
                         $pkgInfo = $this->maps->get($pkgName);
                         //cache pack info
-                        $url = $pkgFounds[$pkgName] = $pkg['url'];
+                        $url = $pkgFounds[$pkgName] = $pkgInfo['url'];
                         $this->urlCache[$url] = $pkgInfo;
                     }
                 }else{
@@ -123,8 +123,8 @@ class Resources{
         $allUrls['css'] = array_merge($allUrls['css'], $inJsCss);
 
         $comboOptions = Helper::get($this->options, 'combo');
-        $comboOnlyUnPackFile = Helper::get($comboOptions, 'comboOnlyUnPackFile', false);
-        $comboMaxUrlLength = Helper::get($comboOptions, 'comboMaxUrlLength', self::COMBO_MAX_URL_LENGTH);
+        $comboOnlyUnPackFile = Helper::get($comboOptions, 'onlyUnPackFile', false);
+        $comboMaxUrlLength = Helper::get($comboOptions, 'maxUrlLength', self::COMBO_MAX_URL_LENGTH);
 
         foreach($allUrls as $type => $urls){
             $urls = $allUrls[$type] = array_unique($urls);
@@ -229,7 +229,7 @@ class Resources{
 
         $asyncs = Helper::get($mapInfo, 'asyncs', array());
 
-        if(count($asyncs) && !$isPagelet && !Helper::get($mapInfo, 'isWidget')){
+        if(count($asyncs) && (Helper::get($this->options, 'debug') || !$isPagelet)){
             if(Helper::get($mapInfo, 'headJs')){
                 array_unshift($mapInfo['headJs'], self::LOADER);
             }else{
