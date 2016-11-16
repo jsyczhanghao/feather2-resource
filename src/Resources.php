@@ -12,6 +12,8 @@ class Resources{
     private static $RESOURCE_TYPES = array('headJs', 'bottomJs', 'css');  
     const COMBO_MAX_URL_LENGTH = 2000;
     const LOADER = 'static/feather.js';
+    const THIRD_REG = '#(?:^|:)static/(?:.+?/)*third/#';
+    const DOMAIN_REG = '#(?:^(?:(?:https?:)?//)?[^/]+)?/#';
 
     public function __construct($templateDir, $options = array()){
         $this->templateDir = (array)$templateDir;
@@ -133,54 +135,71 @@ class Resources{
                 continue;
             }
 
-            $finalUrls = array();
             $combos = array();
+            $i = 0;
 
             foreach($urls as $url){
                 if($info = Helper::get($this->urlCache, $url)){
-                    if($comboOnlyUnPackFile && !isset($info['isPkg']) || !$comboOnlyUnPackFile){
-                        $combos[] = $url;
+                    if(($comboOnlyUnPackFile && !isset($info['isPkg']) || !$comboOnlyUnPackFile)
+                        && !self::isThird($info['id'])
+                    ){
+                        $combos[$i][] = $url;
                     }else{
-                        $finalUrls[] = $url;
+                        $combos[] = $url;
+                        $i = count($combos);
                     }
                 }else{
-                    $finalUrls[] = $url;
+                    $combos[] = $url;
+                    $i = count($combos);
                 }
             }
 
-            $combosDirGroup = array();
+            $finalUrls = array();
 
-            foreach($combos as $url){
-                preg_match('#(?:^(?:(?:https?:)?//)?[^/]+)?/#', $url, $data);
-                $baseurl = $data[0];
-                $combosDirGroup[$baseurl][] = $url;
-            }
-
-            foreach($combosDirGroup as $dir => $urls){
-                if(count($urls) > 1){
-                    $baseNames = array();
-                    $dirLength = strlen($dir);
-                    $len = 0;
-
-                    foreach($urls as $url){
-                        $url = substr($url, $dirLength);
-                        $baseNames[] = $url;
-
-                        if(strlen($url) + $len >= $comboMaxUrlLength){
-                            $len = 0;
-                            $resources[] = $dir . $comboOptions['syntax'][0] . implode($comboOptions['syntax'][1], $baseNames); 
-                            $baseNames = array();
-                        }else{
-                            $len += strlen($url);
-                        }
-                    }
-
-                    if(count($baseNames)){
-                        $finalUrls[] = $dir . $comboOptions['syntax'][0] . implode($comboOptions['syntax'][1], $baseNames); 
-                    }
-                }else{
+            foreach($combos as $urls){
+                if(is_string($urls)){
+                    $finalUrls[] = $urls;
+                    continue;
+                }else if(count($urls) == 1){
                     $finalUrls[] = $urls[0];
-                } 
+                    continue;
+                }
+
+                $dir = null;
+                $len = 0;
+                $dirLen = 0;
+                $bases = array();
+
+                foreach($urls as $url){
+                    $domain = self::getDomain($url);
+
+                    if(!$dir){
+                        $dir = $domain;
+                    }
+
+                    if($domain != $dir || $len >= $comboMaxUrlLength){
+                        if(count($bases) > 1){
+                            $finalUrls[] = $dir . $comboOptions['syntax'][0] . implode($comboOptions['syntax'][1], $bases);
+                        }else if(count($bases) == 1){
+                            $finalUrls[] = $dir . $bases[0];
+                        }
+
+                        $bases = array();
+                        $dir = $domain;
+                    }
+
+                    $dirLen = strlen($domain);
+                    $base = substr($url, $dirLen);
+
+                    $bases[] = $base;
+                    $len += strlen($base);
+                }
+
+                if(count($bases) > 1){
+                    $finalUrls[] = $dir . $comboOptions['syntax'][0] . implode($comboOptions['syntax'][1], $bases);
+                }else if(count($bases) == 1){
+                    $finalUrls[] = $dir . $bases[0];
+                }
             }
 
             $allUrls[$type] = $finalUrls;
@@ -279,5 +298,14 @@ class Resources{
 
         $this->cache && $this->cache->set($cacheKey, $data);
         return $data;
+    }
+
+    public static function isThird($id){
+        return !!preg_match(self::THIRD_REG, $id, $match);
+    }
+
+    public static function getDomain($url){
+        preg_match(self::DOMAIN_REG, $url, $data);
+        return $data[0];
     }
 }

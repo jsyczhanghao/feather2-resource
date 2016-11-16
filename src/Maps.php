@@ -18,7 +18,13 @@ class Maps{
 
         $this->initNameSpaceMap($info['namespace']);
 
-        return Helper::get($this->maps, $info['id']);
+        $maps = Helper::get($this->maps, $info['id']);
+
+        if($maps){
+            $maps['id'] = $info['id'];
+        }
+        
+        return $maps;
     }
 
     public function getIncludeRefs($id, $isRef = false){
